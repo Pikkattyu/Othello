@@ -13,6 +13,6 @@ pip install pygame
 cdコマンドを使う
 
 gitからクローンします。
-git clone https://github.com/Pikkattyu/Othello.git
+git clone https://Pikkattyu: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@github.com/Pikkattyu/Othello.git
 
 準備ができたらファイルを開いてF5で触ることができます。
