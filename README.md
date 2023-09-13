@@ -7,6 +7,7 @@ VSCodeのExtensionsからpythonを入れます。
 
 ターミナルからpygameのライブラリを入れます。
 python -m pip install --upgrade pip
+
 pip install pygame
 
 ターミナルを使ってファイルを作りたい場所に移動します。
