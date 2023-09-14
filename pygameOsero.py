@@ -3,12 +3,18 @@ import sys
 
 # ゲームボードの初期化
 # 8×8の正方形を作る
-board = [[0] * 8 for _ in range(8)]
+
+OthelloBoard = 8
+board = [[0] * OthelloBoard for _ in range(OthelloBoard)]
 
 # 初期配置
 # 白（2）と黒（1）のオセロを置く…何もない（0）
 board[3][3] = board[4][4] = 1
 board[3][4] = board[4][3] = 2
+board[2][4] = 3
+board[4][2] = 3
+board[3][5] = 3
+board[5][3] = 3
 
 # ゲーム初期化
 pygame.init()
@@ -21,27 +27,102 @@ pygame.display.set_caption("オセロゲーム")
 # 色の定義
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+RED = (150, 50, 50)
 GREEN = (50, 200, 50)
+# そこを起点に周りをすべて表す 0をx 1をy座標とする。上から時計回り
+LOOKAROUND = [[0, -1], [1, -1], [1, 0],
+              [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]]
 
 clock = pygame.time.Clock()
 loopCounter = 0
 player_turn = 1
+enemy_turn = 2
 
 # メインループ
 while True:
     for event in pygame.event.get():
+        # ゲーム終了
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+        # 石を置く
         if event.type == pygame.MOUSEBUTTONDOWN:
+            # 座標の取り出し
             x, y = pygame.mouse.get_pos()
-            col = x // (width // 8)
-            row = y // (height // 8)
-            if board[row][col] == 0:
+            # 座標からどこの枠をクリックしたのか割り出し
+            col = x // (width // OthelloBoard)
+            row = y // (height // OthelloBoard)
+            # もし、石が置ける場所なら～のif文
+            if board[row][col] == 3:
                 # 石を置く
                 board[row][col] = player_turn
+                # 石をひっくり返す
+                for point in range(8):
+                    try:
+                        AroundPoint = board[row + LOOKAROUND[point]
+                                            [0]][col + LOOKAROUND[point][1]]
+                        if AroundPoint == enemy_turn:
+                            lc = 2
+                            while AroundPoint == enemy_turn:
+                                # ループする数だけ直線方向に進んでいく
+                                xmove = LOOKAROUND[point][1] * lc
+                                ymove = LOOKAROUND[point][0] * lc
+                                if row + ymove < 0 or col + xmove < 0:
+                                    break
+                                AroundPoint = board[row + ymove][col + xmove]
+                                lc += 1
+                            # 抜けた先が自分の石である = ひっくり返す処理が必要になる
+                            if AroundPoint == player_turn:
+                                lc = 1
+                                # 初期位置に戻る
+                                AroundPoint = board[row + LOOKAROUND[point]
+                                                    [0]][col + LOOKAROUND[point][1]]
+                                # 今度は敵の石をひっくり返して行く
+                                while AroundPoint == enemy_turn:
+                                    # ループする数だけ直線方向に進んでいく
+                                    board[row + (LOOKAROUND[point][0] * lc)][col + (
+                                        LOOKAROUND[point][1] * lc)] = player_turn
+                                    lc += 1
+                                    # 現在地の更新
+                                    AroundPoint = board[row + (LOOKAROUND[point][0] * lc)][col + (
+                                        LOOKAROUND[point][1] * lc)]
+                    except:
+                        pass
+                print(board[0][-1])
+
                 # プレイヤーを切り替える
                 player_turn = 3 - player_turn
+                enemy_turn = 3 - player_turn
+                # 置ける場所を割り出す
+                for row2 in range(8):
+                    for col2 in range(8):
+                        # 置ける場所をなくす
+                        if board[row2][col2] == 3:
+                            board[row2][col2] = 0
+                        # 石が置いていない場所ならおけるか検知する
+                        if board[row2][col2] == 0:
+                            for point in range(8):
+                                try:
+                                    AroundPoint = board[row2 + LOOKAROUND[point]
+                                                        [0]][col2 + LOOKAROUND[point][1]]
+                                    # 周りに相手の石がある場合、石をおける可能性がある
+                                    if AroundPoint == enemy_turn:
+                                        try:
+                                            lc = 1
+                                            while AroundPoint == enemy_turn:
+                                                # ループする数だけ直線方向に進んでいく
+                                                AroundPoint = board[row2 + (LOOKAROUND[point][0] * lc)][col2 + (
+                                                    LOOKAROUND[point][1] * lc)]
+                                                lc += 1
+                                            # 抜け出した箇所に自分の石があればおける
+                                            if AroundPoint == player_turn:
+                                                board[row2][col2] = 3
+                                        except:
+                                            # 端の場合、index outエラーをするため
+                                            pass
+                                except:
+                                    # 端の場合、index outエラーをするため
+                                    pass
 
     # ゲームボードを描画
     screen.fill(GREEN)
@@ -56,6 +137,7 @@ while True:
 
     # オセロ石を置く
     cell_size = width // 8
+    cnt3 = 0
     for row in range(8):
         for col in range(8):
             if board[row][col] == 1:
@@ -64,6 +146,13 @@ while True:
             elif board[row][col] == 2:
                 pygame.draw.circle(screen, WHITE, (col * cell_size + cell_size //
                                    2, row * cell_size + cell_size // 2), cell_size // 2 - 5)
+            # elif board[row][col] == 3:
+            #    screen.fill(RED,
+            #                (col * cell_size,
+            #                 row * cell_size,
+            #                 col * cell_size + cell_size,
+            #                 row * cell_size + cell_size)
+            #                )
 
     clock.tick(10)
     pygame.display.flip()
