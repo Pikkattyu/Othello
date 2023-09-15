@@ -1,5 +1,6 @@
 import pygame
 import sys
+import time
 
 # ゲームボードの初期化
 # 8×8の正方形を作る
@@ -10,6 +11,7 @@ board = [[0] * OthelloBoard for _ in range(OthelloBoard)]
 # 初期配置
 # 白（2）と黒（1）のオセロを置く…何もない（0）
 board[3][3] = board[4][4] = 1
+# board[3][4] = 2
 board[3][4] = board[4][3] = 2
 board[2][4] = 3
 board[4][2] = 3
@@ -27,8 +29,9 @@ pygame.display.set_caption("オセロゲーム")
 # 色の定義
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-RED = (150, 50, 50)
+RED = (255, 100, 100)
 GREEN = (50, 200, 50)
+YELLOW = (50, 200, 200)
 # そこを起点に周りをすべて表す 0をx 1をy座標とする。上から時計回り
 LOOKAROUND = [[0, -1], [1, -1], [1, 0],
               [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]]
@@ -37,6 +40,8 @@ clock = pygame.time.Clock()
 loopCounter = 0
 player_turn = 1
 enemy_turn = 2
+skipFlg = False
+font = pygame.font.Font('D:\お遊び\Othello\Othello\Font/ipaexm.ttf', 15)
 
 # メインループ
 while True:
@@ -54,6 +59,7 @@ while True:
             row = y // (height // OthelloBoard)
             # もし、石が置ける場所なら～のif文
             if board[row][col] == 3:
+                skipFlg = True
                 # 石を置く
                 board[row][col] = player_turn
                 # 石をひっくり返す
@@ -88,7 +94,6 @@ while True:
                                         LOOKAROUND[point][1] * lc)]
                     except:
                         pass
-                print(board[0][-1])
 
                 # プレイヤーを切り替える
                 player_turn = 3 - player_turn
@@ -111,18 +116,26 @@ while True:
                                             lc = 1
                                             while AroundPoint == enemy_turn:
                                                 # ループする数だけ直線方向に進んでいく
+                                                xmove = LOOKAROUND[point][1] * lc
+                                                ymove = LOOKAROUND[point][0] * lc
+                                                if row2 + ymove < 0 or col2 + xmove < 0:
+                                                    break
                                                 AroundPoint = board[row2 + (LOOKAROUND[point][0] * lc)][col2 + (
                                                     LOOKAROUND[point][1] * lc)]
                                                 lc += 1
                                             # 抜け出した箇所に自分の石があればおける
                                             if AroundPoint == player_turn:
                                                 board[row2][col2] = 3
+                                                skipFlg = False
                                         except:
                                             # 端の場合、index outエラーをするため
                                             pass
                                 except:
                                     # 端の場合、index outエラーをするため
                                     pass
+                if skipFlg:
+                    player_turn = 3 - player_turn
+                    enemy_turn = 3 - player_turn
 
     # ゲームボードを描画
     screen.fill(GREEN)
@@ -146,13 +159,28 @@ while True:
             elif board[row][col] == 2:
                 pygame.draw.circle(screen, WHITE, (col * cell_size + cell_size //
                                    2, row * cell_size + cell_size // 2), cell_size // 2 - 5)
-            # elif board[row][col] == 3:
-            #    screen.fill(RED,
-            #                (col * cell_size,
-            #                 row * cell_size,
-            #                 col * cell_size + cell_size,
-            #                 row * cell_size + cell_size)
-            #                )
+            elif board[row][col] == 3:
+                screen.fill(RED,
+                            (col * cell_size + 2.5,
+                             row * cell_size + 2.5,
+                             47.5,
+                             47.5)
+                            )
+
+    # 石が置けない場合にスクリーンに文字を出す。
+    if skipFlg:
+        skipFlg = False
+        # 置ける場所がないため、ターンが継続します。
+        # fillはX座標, Y座標, Width, Height
+        screen.fill(RED, (50, 150, 300, 100))
+        # 描画する文字列の設定
+        text = font.render("置ける場所がないため、ターンが継続します。", True, (255, 255, 255))
+        # 文字列の表示位置
+        screen.blit(text, [20, 150])
+        pygame.display.flip()
+        time.sleep(3)
+
+    loopCounter += 1
 
     clock.tick(10)
     pygame.display.flip()
